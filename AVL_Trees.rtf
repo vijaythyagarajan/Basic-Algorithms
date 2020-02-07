@@ -1,0 +1,694 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2509
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fnil\fcharset0 Menlo-Bold;}
+{\colortbl;\red255\green255\blue255;\red93\green108\blue121;\red255\green255\blue255;\red0\green0\blue0;
+\red100\green56\blue32;\red196\green26\blue22;\red155\green35\blue147;\red57\green0\blue160;\red11\green79\blue121;
+\red15\green104\blue160;\red28\green70\blue74;\red50\green109\blue116;\red28\green0\blue207;\red108\green54\blue169;
+}
+{\*\expandedcolortbl;;\csgenericrgb\c36526\c42188\c47515;\csgenericrgb\c100000\c100000\c100000;\csgenericrgb\c0\c0\c0\c85000;
+\csgenericrgb\c39147\c22031\c12446;\csgenericrgb\c77000\c10200\c8600;\csgenericrgb\c60759\c13753\c57628;\csgenericrgb\c22454\c0\c62803;\csgenericrgb\c4314\c30980\c47451;
+\csgenericrgb\c5882\c40784\c62745;\csgenericrgb\c10981\c27276\c28869;\csgenericrgb\c19418\c42935\c45455;\csgenericrgb\c11000\c0\c81000;\csgenericrgb\c42190\c21278\c66379;
+}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab593
+\pard\tx593\pardeftab593\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 //\cf4 \
+\cf2 //  main.cpp\cf4 \
+\cf2 //  Assignment5\cf4 \
+\cf2 //\cf4 \
+\cf2 //  Created by Vijay on 30/10/19.\cf4 \
+\cf2 //  Copyright \'a9 2019 Vijay. All rights reserved.\cf4 \
+\cf2 //\cf4 \
+\
+\cf5 #include \cf6 <iostream>\cf4 \
+\cf5 #include \cf6 <algorithm>\cf4 \
+\
+\
+
+\f1\b \cf7 using
+\f0\b0 \cf4  
+\f1\b \cf7 namespace
+\f0\b0 \cf4  \cf8 std\cf4 ;\
+\
+\cf2 //You need to use the following node class for each node of the AVL tree\cf4 \
+
+\f1\b \cf7 class
+\f0\b0 \cf4  \cf9 node\cf4  \{\
+
+\f1\b \cf7 public
+\f0\b0 \cf4 :\
+    
+\f1\b \cf7 int
+\f0\b0 \cf4  \cf10 value\cf4 ;\
+    
+\f1\b \cf7 int
+\f0\b0 \cf4  \cf10 height\cf4 ;\cf2 //this is tree height. Leaf node is 1; empty node (i.e., NIL) is 0\cf4 \
+    \cf11 node\cf4  * \cf10 parent\cf4 ;\
+    \cf11 node\cf4  * \cf10 l_child\cf4 ;\
+    \cf11 node\cf4  * \cf10 r_child\cf4 ;\
+    \cf10 node\cf4 () \{\}\
+    \cf10 node\cf4 (
+\f1\b \cf7 int
+\f0\b0 \cf4  i) \{ \cf12 value\cf4  = i; \cf12 height\cf4  = \cf13 1\cf4 ; \cf12 parent\cf4  = \cf12 l_child\cf4  = \cf12 r_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ; \}\
+    \
+    \cf10 node\cf4 (
+\f1\b \cf7 const
+\f0\b0 \cf4  \cf11 node\cf4  &p1) \{\
+        \cf12 value\cf4  = p1.\cf12 value\cf4 ;\
+        \cf12 parent\cf4  = p1.\cf12 parent\cf4 ;\
+        \cf12 l_child\cf4  = p1.\cf12 l_child\cf4 ;\
+        \cf12 r_child\cf4  = p1.\cf12 r_child\cf4 ;\
+        \cf12 height\cf4  = p1.\cf12 height\cf4 ;\
+        \
+    \}\
+\
+\};\
+\
+
+\f1\b \cf7 class
+\f0\b0 \cf4  \cf9 avl_tree\cf4  \{\
+
+\f1\b \cf7 public
+\f0\b0 \cf4 :\
+    \cf11 node\cf4  * \cf10 root\cf4 ;\
+    \cf10 avl_tree\cf4 () \{\
+        \cf12 root\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+    \}\
+\
+    \cf2 //************************************************************************************\cf4 \
+    \cf2 //Implement the following member functions\cf4 \
+    
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf10 add_node\cf4 (
+\f1\b \cf7 int
+\f0\b0 \cf4  i);\
+    \cf2 //if case of a tie, add i to the last of existing nodes with value i in the in-order sequence\cf4 \
+\
+    
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf10 delete_node\cf4 (
+\f1\b \cf7 int
+\f0\b0 \cf4  i);\
+    \cf2 //Delete the node with value i.  in case of multiple nodes with value i, delete the first node with value i in the in-order traveral sequence\cf4 \
+\
+\
+    
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf10 in_order_traversal\cf4 (\cf11 node\cf4  *p); \cf2 //such as 2 5 9 11 11 14 15 15 ...\cf4 \
+\
+    \cf8 pair\cf4 <\cf11 node\cf4  *, 
+\f1\b \cf7 int
+\f0\b0 \cf4 > \cf10 height_update\cf4 (\cf11 node\cf4  *p);\
+    \cf2 /*\cf4 \
+\cf2     This function will be invoked by add_node and delete_node.\cf4 \
+\cf2     p points to the first node that we need to check for possible height update.  We then need to check possible height update toward root.\cf4 \
+\cf2     All nodes whose heights need to be updated will be performed in this function.\cf4 \
+\cf2     The function returns a pair.  If no imbalance is detected, the first of the pair will be nullptr; otherwise it will be the address of the action node.\cf4 \
+\cf2     The second of the pair will be 0 if no imbalance is detected; otherwise its value is 1,2,3,4 for RR RL, LL, and LR pattern, respectively.\cf4 \
+\cf2     */\cf4 \
+\
+    
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf10 L_Rotate\cf4 (\cf11 node\cf4  *p);\
+    \cf2 //p points to the node at which the rotation will be performed.\cf4 \
+\
+    
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf10 R_Rotate\cf4 (\cf11 node\cf4  *p);\
+    \cf2 //p points to the node at which the rotation will be performed.\cf4 \
+\};\
+\
+\
+
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf11 avl_tree\cf4 ::\cf10 in_order_traversal\cf4 (\cf11 node\cf4  *p) \{\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (p == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        
+\f1\b \cf7 return
+\f0\b0 \cf4  ;\
+    \}\
+    \cf12 in_order_traversal\cf4 (p->\cf12 l_child\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << p->\cf12 value\cf4   <<\cf6 " "\cf4 ;\
+    \cf12 in_order_traversal\cf4 (p->\cf12 r_child\cf4 );\
+\
+\}\
+\
+
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf11 avl_tree\cf4 ::\cf10 L_Rotate\cf4 (\cf11 node\cf4  *z) \{\
+ \
+    
+\f1\b \cf7 bool
+\f0\b0 \cf4  dealRoot = 
+\f1\b \cf7 false
+\f0\b0 \cf4 ;\
+    \cf11 node\cf4  *y = z->\cf12 r_child\cf4 ;\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        dealRoot = 
+\f1\b \cf7 true
+\f0\b0 \cf4 ;\
+        \cf12 root\cf4  = y;\
+    \}\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4 ) \{\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4 ->\cf12 value\cf4  > y->\cf12 value\cf4 ) \{\
+        z->\cf12 parent\cf4 ->\cf12 l_child\cf4  = y;\
+        \}\
+        
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+            z->\cf12 parent\cf4 ->\cf12 r_child\cf4  = y;\
+        \}\
+    \}\
+    y->\cf12 parent\cf4  = z->\cf12 parent\cf4 ;\
+    \cf11 node\cf4  *T3 = y->\cf12 l_child\cf4 ;\
+    y->\cf12 l_child\cf4  = z;\
+    z->\cf12 height\cf4  = y->\cf12 height\cf4 ;\
+    z->\cf12 parent\cf4  = y;\
+    z->\cf12 r_child\cf4  = T3;\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (T3) T3->\cf12 parent\cf4  = z;\
+    \
+\}\
+\
+
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf11 avl_tree\cf4 ::\cf10 R_Rotate\cf4 (\cf11 node\cf4  *z) \{\
+    
+\f1\b \cf7 bool
+\f0\b0 \cf4  dealRoot = 
+\f1\b \cf7 false
+\f0\b0 \cf4 ;\
+    \cf11 node\cf4  *y = z->\cf12 l_child\cf4 ;\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        dealRoot= 
+\f1\b \cf7 true
+\f0\b0 \cf4 ;\
+        \cf12 root\cf4  = y;\
+    \}\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4 )\{\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 (z->\cf12 parent\cf4 ->\cf12 value\cf4  < y->\cf12 value\cf4 ) \{\
+        z->\cf12 parent\cf4 ->\cf12 r_child\cf4  = y;\
+        \}\
+        
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+          z->\cf12 parent\cf4 ->\cf12 l_child\cf4  = y;\
+        \}\
+    \}\
+    y->\cf12 parent\cf4  = z->\cf12 parent\cf4 ;\
+    \cf11 node\cf4  *T3 = y->\cf12 r_child\cf4 ;\
+    y->\cf12 r_child\cf4  = z;\
+    z->\cf12 height\cf4  = y->\cf12 height\cf4 ;\
+    z->\cf12 parent\cf4  = y;\
+    z->\cf12 l_child\cf4  = T3;\
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (T3) T3->\cf12 parent\cf4  = z;\
+\}\
+\
+\
+\cf8 pair\cf4 <\cf11 node\cf4  *,
+\f1\b \cf7 int
+\f0\b0 \cf4 > \cf11 avl_tree\cf4 :: \cf10 height_update\cf4 (\cf11 node\cf4  *p) \{\
+    \
+    
+\f1\b \cf7 int
+\f0\b0 \cf4  insertedNode = p->\cf12 value\cf4 ;\
+    
+\f1\b \cf7 while
+\f0\b0 \cf4  (p != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        
+\f1\b \cf7 int
+\f0\b0 \cf4  l_height = (p->\cf12 l_child\cf4 )?  p->\cf12 l_child\cf4 ->\cf12 height\cf4  : \cf13 0\cf4 ;\
+        
+\f1\b \cf7 int
+\f0\b0 \cf4  r_height = (p->\cf12 r_child\cf4 ) ?  p->\cf12 r_child\cf4 ->\cf12 height\cf4  : \cf13 0\cf4 ;\
+        \
+        p->\cf12 height\cf4  = \cf14 max\cf4 (l_height, r_height) +\cf13 1\cf4 ;\
+        \cf2 //1,2,3,4 for RR RL, LL, and LR pattern, respectively.\cf4 \
+        
+\f1\b \cf7 int
+\f0\b0 \cf4  balanceFactor = l_height - r_height;\
+       \
+        \cf2 // Left Left Case\cf4 \
+        
+\f1\b \cf7 if
+\f0\b0 \cf4  (balanceFactor > \cf13 1\cf4  && insertedNode < p->\cf12 l_child\cf4 ->\cf12 value\cf4 ) \{\
+              
+\f1\b \cf7 return
+\f0\b0 \cf4  \cf14 make_pair\cf4 (p,\cf13 3\cf4 );\
+        \}\
+          \cf2 // Right Right Case\cf4 \
+        
+\f1\b \cf7 if
+\f0\b0 \cf4  (balanceFactor < -\cf13 1\cf4  && insertedNode >= p->\cf12 r_child\cf4 ->\cf12 value\cf4 ) \{\
+            
+\f1\b \cf7 return
+\f0\b0 \cf4  \cf14 make_pair\cf4 (p,\cf13 1\cf4 );\
+        \}\
+          \cf2 // Left Right Case\cf4 \
+          
+\f1\b \cf7 if
+\f0\b0 \cf4  (balanceFactor > \cf13 1\cf4  && insertedNode >= p->\cf12 l_child\cf4 ->\cf12 value\cf4 )\
+          \{\
+              
+\f1\b \cf7 return
+\f0\b0 \cf4  \cf14 make_pair\cf4 (p,\cf13 4\cf4 );\
+          \}\
+        \
+          \cf2 // Right Left Case\cf4 \
+          
+\f1\b \cf7 if
+\f0\b0 \cf4  (balanceFactor < -\cf13 1\cf4  && insertedNode < p->\cf12 r_child\cf4 ->\cf12 value\cf4 )\
+          \{\
+              
+\f1\b \cf7 return
+\f0\b0 \cf4  \cf14 make_pair\cf4 (p,\cf13 2\cf4 );\
+          \}\
+        \
+        p = p->\cf12 parent\cf4 ;\
+    \}\
+    \
+    
+\f1\b \cf7 return
+\f0\b0 \cf4  \{ 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 , \cf13 0\cf4  \};\
+\}\
+\
+\
+
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf11 avl_tree\cf4 ::\cf10 add_node\cf4 (
+\f1\b \cf7 int
+\f0\b0 \cf4  i) \{\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (\cf12 root\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 root\cf4  = 
+\f1\b \cf7 new
+\f0\b0 \cf4  \cf11 node\cf4 (i);\
+        
+\f1\b \cf7 return
+\f0\b0 \cf4 ;\
+    \}\
+    
+\f1\b \cf7 using
+\f0\b0 \cf4  actionNode = \cf11 node\cf4 *;\
+    
+\f1\b \cf7 using
+\f0\b0 \cf4  rotationType = 
+\f1\b \cf7 int
+\f0\b0 \cf4 ;\
+    \cf8 pair\cf4 <\cf11 actionNode\cf4 ,\cf11 rotationType\cf4 > RotateParameter;\
+    \
+    \cf11 node\cf4  *currentNode = \cf12 root\cf4 ;\
+    \cf11 node\cf4  *actualRoot = \cf12 root\cf4 ;\
+    \
+    
+\f1\b \cf7 while
+\f0\b0 \cf4  (actualRoot != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        currentNode = actualRoot;\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 ( i < actualRoot->\cf12 value\cf4 ) \{\
+            actualRoot = actualRoot->\cf12 l_child\cf4 ;\
+        \}\
+        
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+            actualRoot = actualRoot->\cf12 r_child\cf4 ;\
+        \}\
+    \}\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (currentNode->\cf12 value\cf4  <= i) \{\
+        currentNode->\cf12 r_child\cf4  = 
+\f1\b \cf7 new
+\f0\b0 \cf4  \cf11 node\cf4 (i);\
+        currentNode->\cf12 r_child\cf4 ->\cf12 parent\cf4  = currentNode;\
+        \
+      RotateParameter =  \cf12 height_update\cf4 (currentNode->\cf12 r_child\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+        currentNode->\cf12 l_child\cf4  = 
+\f1\b \cf7 new
+\f0\b0 \cf4  \cf11 node\cf4 (i);\
+        currentNode->\cf12 l_child\cf4 ->\cf12 parent\cf4  = currentNode;\
+        \
+       RotateParameter =  \cf12 height_update\cf4 (currentNode->\cf12 l_child\cf4 );\
+    \}\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 1\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 3\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 2\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 ->\cf12 r_child\cf4 );\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 4\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 ->\cf12 l_child\cf4 );\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    \
+\}\
+\
+
+\f1\b \cf7 void
+\f0\b0 \cf4  \cf11 avl_tree\cf4 :: \cf10 delete_node\cf4 (
+\f1\b \cf7 int
+\f0\b0 \cf4  i) \{\
+    \
+    \cf11 node\cf4  *theNode = \cf12 root\cf4 ;\
+    
+\f1\b \cf7 using
+\f0\b0 \cf4  actionNode = \cf11 node\cf4 *;\
+    
+\f1\b \cf7 using
+\f0\b0 \cf4  rotationType = 
+\f1\b \cf7 int
+\f0\b0 \cf4 ;\
+    \cf8 pair\cf4 <\cf11 actionNode\cf4 ,\cf11 rotationType\cf4 > RotateParameter;\
+    \
+    
+\f1\b \cf7 while
+\f0\b0 \cf4  (theNode != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 (i < theNode->\cf12 value\cf4 ) \{\
+            theNode = theNode->\cf12 l_child\cf4 ;\
+        \}\
+        
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4 ( i > theNode->\cf12 value\cf4 ) \{\
+            theNode = theNode->\cf12 r_child\cf4 ;\
+        \}\
+        
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+            
+\f1\b \cf7 break
+\f0\b0 \cf4 ;\
+        \}\
+        \
+    \}\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4 (theNode->\cf12 l_child\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4  || theNode->\cf12 r_child\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf8 pair\cf4 <\cf11 node\cf4  *,
+\f1\b \cf7 bool
+\f0\b0 \cf4 > part = theNode->\cf12 l_child\cf4 ? \cf14 make_pair\cf4 (theNode->\cf12 l_child\cf4 ,
+\f1\b \cf7 true
+\f0\b0 \cf4 ) : \cf14 make_pair\cf4 (theNode->\cf12 r_child\cf4 ,
+\f1\b \cf7 false
+\f0\b0 \cf4 );\
+        \cf11 node\cf4  *father = theNode->\cf12 parent\cf4 ;\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 (part.\cf14 first\cf4  == 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{ \cf2 // its the leaf Node\cf4 \
+            
+\f1\b \cf7 if
+\f0\b0 \cf4 (father->\cf12 l_child\cf4  == theNode) \{\
+                father->\cf12 l_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+            \}\
+            
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+                father->\cf12 r_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+            \}\
+        \}\
+        \
+\
+        
+\f1\b \cf7 if
+\f0\b0 \cf4 (part.\cf14 first\cf4 ) \{\
+            
+\f1\b \cf7 if
+\f0\b0 \cf4 (father->\cf12 l_child\cf4  == part.\cf14 first\cf4 ->\cf12 parent\cf4 ) \{\
+                father->\cf12 l_child\cf4  = part.\cf14 first\cf4 ;\
+                
+\f1\b \cf7 if
+\f0\b0 \cf4 (part.\cf14 second\cf4 ) \{\
+                    part.\cf14 first\cf4 ->\cf12 l_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+                    
+\f1\b \cf7 delete
+\f0\b0 \cf4  part.\cf14 first\cf4 ->\cf12 l_child\cf4 ;\
+                \}\
+                
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+                    part.\cf14 first\cf4 ->\cf12 r_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+                    
+\f1\b \cf7 delete
+\f0\b0 \cf4  part.\cf14 first\cf4 ->\cf12 r_child\cf4 ;\
+                \}\
+                \
+            \}\
+            
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+              father->\cf12 r_child\cf4  = part.\cf14 first\cf4 ;\
+              
+\f1\b \cf7 if
+\f0\b0 \cf4 (part.\cf14 second\cf4 ) \{\
+                  part.\cf14 first\cf4 ->\cf12 l_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+                  
+\f1\b \cf7 delete
+\f0\b0 \cf4  part.\cf14 first\cf4 ->\cf12 l_child\cf4 ;\
+              \}\
+              
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+                  part.\cf14 first\cf4 ->\cf12 r_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+                  
+\f1\b \cf7 delete
+\f0\b0 \cf4  part.\cf14 first\cf4 ->\cf12 r_child\cf4 ;\
+              \}\
+            \}\
+        \}\
+        \cf12 height_update\cf4 (father);\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  \{\
+        \cf2 //further for nodes with two children\cf4 \
+        \cf11 node\cf4  *InOrderPredecessor = theNode->\cf12 l_child\cf4 ;\
+        \cf11 node\cf4  *inordrParent = InOrderPredecessor->\cf12 parent\cf4 ;\
+        \
+        
+\f1\b \cf7 while
+\f0\b0 \cf4  (InOrderPredecessor->\cf12 r_child\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+            inordrParent = InOrderPredecessor;\
+            InOrderPredecessor = InOrderPredecessor->\cf12 r_child\cf4 ;\
+        \}\
+        \
+        theNode->\cf12 value\cf4  = InOrderPredecessor->\cf12 value\cf4 ;\
+        \
+        inordrParent->\cf12 l_child\cf4  = 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ;\
+        \
+    \}\
+    \
+    
+\f1\b \cf7 while
+\f0\b0 \cf4  (theNode != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \
+  RotateParameter =   \cf12 height_update\cf4 (theNode);\
+    \
+    
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 1\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 3\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 2\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 ->\cf12 r_child\cf4 );\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    
+\f1\b \cf7 else
+\f0\b0 \cf4  
+\f1\b \cf7 if
+\f0\b0 \cf4  (RotateParameter.\cf14 second\cf4  == \cf13 4\cf4  && RotateParameter.\cf14 first\cf4  != 
+\f1\b \cf7 nullptr
+\f0\b0 \cf4 ) \{\
+        \cf12 L_Rotate\cf4 (RotateParameter.\cf14 first\cf4 ->\cf12 l_child\cf4 );\
+        \cf12 R_Rotate\cf4 (RotateParameter.\cf14 first\cf4 );\
+        \cf12 height_update\cf4 (RotateParameter.\cf14 first\cf4 );\
+    \}\
+    theNode = theNode->\cf12 parent\cf4 ;\
+    \}\
+\}\
+\
+\
+
+\f1\b \cf7 int
+\f0\b0 \cf4  \cf10 main\cf4 () \{\
+\cf2 //Different test cases will be used during grading.\cf4 \
+    \cf11 avl_tree\cf4  t1;\
+\cf2 //    t1.add_node(11);\cf4 \
+\cf2 //    t1.add_node(9);\cf4 \
+\cf2 //    t1.add_node(6);\cf4 \
+\cf2 //    t1.add_node(20);\cf4 \
+\cf2 //    t1.add_node(14);\cf4 \
+\cf2 //    t1.add_node(5);\cf4 \
+\cf2 //    t1.add_node(5);\cf4 \
+\cf2 //    t1.in_order_traversal(t1.root);\cf4 \
+\cf2 //    std::cout << std::endl;\cf4 \
+\cf2 //    t1.add_node(3);\cf4 \
+\cf2 //    t1.add_node(7);\cf4 \
+\cf2 //    t1.add_node(8);\cf4 \
+\cf2 //    t1.add_node(8);\cf4 \
+\cf2 //    t1.add_node(8);\cf4 \
+\
+    t1.\cf12 add_node\cf4 (\cf13 100\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 50\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 1000\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 25\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 75\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 80\cf4 );\
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    t1.\cf12 add_node\cf4 (\cf13 2000\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 1500\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 70\cf4 );\
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    t1.\cf12 add_node\cf4 (\cf13 73\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 72\cf4 );\
+    t1.\cf12 add_node\cf4 (\cf13 13\cf4 );\
+    \
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    t1.\cf12 delete_node\cf4 (\cf13 25\cf4 );\
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    \
+    t1.\cf12 delete_node\cf4 (\cf13 72\cf4 );\
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    \
+    t1.\cf12 delete_node\cf4 (\cf13 100\cf4 );\
+    t1.\cf12 in_order_traversal\cf4 (t1.\cf12 root\cf4 );\
+    \cf8 std\cf4 ::\cf14 cout\cf4  << \cf8 std\cf4 ::\cf14 endl\cf4 ;\
+    \
+    \
+    \cf14 getchar\cf4 ();\
+    \cf14 getchar\cf4 ();\
+    
+\f1\b \cf7 return
+\f0\b0 \cf4  \cf13 0\cf4 ;\
+\}\
+}

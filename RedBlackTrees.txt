@@ -1,0 +1,1030 @@
+//
+//  main.cpp
+//  Assignment_6_ADS
+//
+//  Created by Vijay on 15/11/19.
+//  Copyright © 2019 Vijay. All rights reserved.
+//
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
+
+class node {
+public:
+    node* p_parent;
+    node* p_Lchild;
+    node* p_Rchild;
+    int value;
+    bool color; //true: red, false: black
+    node() { p_parent = p_Lchild = p_Rchild = nullptr; }
+    node(int i) { value = i; p_parent = p_Lchild = p_Rchild = nullptr; }
+};
+
+class tree {
+public:
+    node* root;
+    tree() { root = nullptr; }
+
+    //For insert, the new node should be the last of nodes with the same value in the order of
+    //inorder traversal.  (The same as HW5.)
+    void insert_node(int i);
+    void insert_R_rotate(node* p);//For insert_node, R-rotate at node pointed by p
+    void insert_L_rotate(node* p);//for insert_node, L-rotate at node pointed by p
+    //All other siutions of insert_node should be directly implemented inside add_node
+
+
+    //For delete, the deleted node shoud be the first of nodes with the same value in the order of
+    //inorder traversal. (The same as HW5).
+    //For replacement, always recursively replace it with predecessor, unless there is no predecessor. (In this
+    //case, replace it with sucessor.)
+
+
+    void delete_node(int i);
+    void delete_1(node* p); //case 1 of delete_node; p points to the parent of double black node
+    void delete_1_R_rotate(node* p);//R_totate used in case 1 of delete_node; p points to the parent of double black node
+    void delete_1_L_rotate(node* p);//L_totate used in case 1 of delete_node; p points to the parent of double black node
+    void delete_2A(node* p); //case 2A of delete_node; p points to the parent of double black node
+    void delete_2B(node* p);//case 2B of delete_node; p points to the parent of double black node
+    void delete_3(node* p);//case 3 of delete_node; p points to the parent of double black node
+    //All other cases of delete_node should be directly implemented inside the delete_node.
+
+    //For the following, during traveral, print (value, color) of each node.
+    void InorderPrint(node *);
+    void PostorderPrint(node *);
+    void PreorderPrint(node *);
+};
+
+
+void printLeftRight(node *current, int & min, int & max , int val) {
+    if(current == nullptr) {
+        return;
+    }
+    if(val < min) {
+        min = val;
+        
+    }
+    else if(val > max) {
+        max = val;
+    }
+    
+    printLeftRight(current->p_Lchild,min,max,val-1);
+    printLeftRight(current->p_Rchild, min, max, val+1);
+}
+
+
+void printMatrix( tree t1) {
+    int min = 0;
+    int max = 0;
+    
+    printLeftRight(t1.root,min,max,0);
+    
+    std::cout << "{" << min << " : " << max << "}";
+    
+}
+
+// red -> true  black ->false
+void tree::insert_node(int i) {
+    
+    if(root == nullptr) {
+        root = new node(i);
+        root->color = false; // root node always black
+        return;
+    }
+    else {
+        
+        node *currentNode = root;
+        node *parent = nullptr;
+        node *parentNode = nullptr; // parent of the added node
+        bool isCurrentNodeLeft = false; // check the side the child is added
+        bool isParentNodeLeft  = false;
+        node *siblingNode = nullptr;
+        node *grandFather = nullptr;
+        
+        while ( currentNode != nullptr) {
+            
+            if(currentNode->value <= i) {
+                parent = currentNode;
+                currentNode = currentNode->p_Rchild;
+            }
+            else {
+                parent = currentNode;
+                currentNode = currentNode->p_Lchild;
+            }
+        }
+        
+        if(i < parent->value) {
+            parent->p_Lchild = new node(i);
+            parent->p_Lchild->color = true;
+            parent->p_Lchild->p_parent = parent;
+            currentNode = parent->p_Lchild;
+            //            parentNode = parent;
+        }
+        else {
+            currentNode = parent;
+            
+            if(currentNode->p_Rchild != nullptr) {
+                currentNode = currentNode->p_Rchild;
+                
+                while (currentNode->p_Rchild != nullptr && currentNode->p_Rchild->value == i) {
+                    currentNode = currentNode->p_Rchild;
+                }
+                
+                if(currentNode->p_Rchild != nullptr) {
+                    currentNode->p_Rchild->p_Lchild = new node(i);
+                    currentNode->p_Rchild->p_parent = currentNode;
+                    currentNode->p_Rchild->p_Lchild->color = true;
+                    currentNode = currentNode->p_Rchild;
+                }
+                else {
+                    currentNode->p_Rchild = new node(i);
+                    currentNode->p_Rchild->color = true;
+                    currentNode->p_Rchild->p_parent = currentNode;
+                    currentNode = currentNode->p_Rchild;
+                }
+            }
+            else {
+                currentNode->p_Rchild = new node(i);
+                currentNode->p_Rchild->color = true;
+                currentNode->p_Rchild->p_parent = currentNode;
+                currentNode = currentNode->p_Rchild;
+            }
+        }
+        
+        parentNode = currentNode->p_parent; // parent of the added node
+        grandFather = (parentNode != nullptr)? parentNode->p_parent : nullptr; // grand parent
+        isCurrentNodeLeft = (parentNode->p_Lchild == currentNode) ? true : false; // check the side the child is added
+        if(grandFather) {
+            isParentNodeLeft = (grandFather->p_Lchild == parentNode) ? true : false;
+            
+            
+            if(isParentNodeLeft) {
+                siblingNode = (grandFather->p_Rchild != nullptr)? grandFather->p_Rchild : nullptr;
+            }
+            else {
+                siblingNode = (grandFather->p_Lchild != nullptr)? grandFather->p_Lchild : nullptr;
+            }
+        }
+        
+        
+        // check all the conditions for violations
+        
+        node *curr = currentNode;
+        
+        while (curr != nullptr) {
+            if(parentNode->color == true &&  ( siblingNode != nullptr && siblingNode->color == true)) {
+                // case 1 : R-R  and U -> R then swap color of S and R to black and Parent as red if its not root
+                siblingNode->color = false;
+                parentNode->color = false;
+                
+                if(grandFather != root) {
+                    grandFather->color = true;
+                    curr = grandFather;
+                    if(curr != nullptr) {
+                        parentNode = grandFather->p_parent;
+                        grandFather = (parentNode != nullptr)? parentNode->p_parent : nullptr; // grand parent
+                        isCurrentNodeLeft = (parentNode->p_Lchild == curr) ? true : false; // check the side the child is added
+                        if(grandFather) {
+                            isParentNodeLeft = (grandFather->p_Lchild == parentNode) ? true : false;
+                            
+                            
+                            if(isParentNodeLeft) {
+                                siblingNode = (grandFather->p_Rchild != nullptr)? grandFather->p_Rchild : nullptr;
+                            }
+                            else {
+                                siblingNode = (grandFather->p_Lchild != nullptr)? grandFather->p_Lchild : nullptr;
+                            }
+                        }
+                        
+                    }
+                    
+                }
+                else {
+                    break;
+                    // dead lock reached parent just keep him black as always
+                }
+                
+                //break;
+                
+            }
+            else if (parentNode->color == true && (siblingNode == nullptr || siblingNode->color == false) ){
+                // need to perform rotations
+                if(isParentNodeLeft && isCurrentNodeLeft) {
+                    // R rotate
+                    insert_R_rotate(grandFather);
+                    grandFather->color = !grandFather->color;
+                    parentNode->color = !parentNode->color;
+                }
+                
+               else if( !isParentNodeLeft && !isCurrentNodeLeft) {
+                    insert_L_rotate(grandFather);
+                    grandFather->color = !grandFather->color;
+                    parentNode->color = !parentNode->color;
+                    
+                }
+               else if( isParentNodeLeft && ! isCurrentNodeLeft) {
+                   insert_L_rotate(parentNode);
+                   insert_R_rotate(grandFather);
+                   parentNode->p_parent->color = ! parentNode->p_parent->color;
+                   grandFather->color = ! grandFather->color;
+                   
+                   
+               }
+               else if (! isParentNodeLeft && isCurrentNodeLeft) {
+                   insert_R_rotate(parentNode);
+                   insert_L_rotate(grandFather);
+                   parentNode->p_parent->color = ! parentNode->p_parent->color;
+                   grandFather->color = ! grandFather->color;
+                   
+               }
+                break;
+            }
+            else if (parentNode->color == true &&  siblingNode == nullptr ) {
+                siblingNode->color = false;
+                curr->color = false;
+                
+                if(parentNode != root) {
+                    parentNode->color = true;
+                    curr = parentNode;
+                    if(curr != nullptr) {
+                        parentNode = curr->p_parent;
+                    }
+                    
+                }
+                else {
+                    // dead lock reached parent just keep him black as always
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
+    
+    
+}
+
+void tree:: insert_R_rotate(node* p) {
+    
+    node *b = p->p_Lchild;
+   // node *T1 = p->p_Rchild;
+    node *T2 = nullptr;
+    if(b != nullptr) T2 = b->p_Rchild;
+    
+    node *x = p->p_parent;
+    
+    
+    
+    b->p_Rchild = p;
+    b->p_parent = p->p_parent;
+    p->p_Lchild = T2;
+    p->p_parent = b;
+    
+    if(x != nullptr) {
+        bool isRight = (x->p_Rchild == p) ? true : false;
+
+        
+        if(isRight) {
+            x->p_Rchild = b;
+            b->p_parent = x;
+        }
+        else {
+            x->p_Lchild = b;
+            b->p_parent = x;
+        }
+    }
+    else {
+        root = b;
+    }
+    
+    if(T2 != nullptr) {
+        T2->p_parent = p;
+        if(p->p_Lchild == T2) {
+            p->p_Lchild = T2;
+        }
+        else {
+            p->p_Rchild = T2;
+        }
+    }
+
+    
+}
+
+void tree:: insert_L_rotate(node* p) {
+    
+    node *b = p->p_Rchild;
+   // node *T1 = p->p_Lchild;
+    node *T2 = nullptr;
+    if(b != nullptr) T2 = b->p_Lchild;
+    
+    node *x = p->p_parent;
+    
+    b->p_Lchild = p;
+    b->p_parent = p->p_parent;
+    p->p_Rchild = T2;
+    p->p_parent = b;
+    if(x != nullptr) {
+        bool isleft = (x->p_Lchild == p)? true : false;
+        
+        if(isleft) {
+            x->p_Lchild = b;
+            b->p_parent = x;
+        }
+        else {
+            x->p_Rchild = b;
+            b->p_parent = x;
+        }
+    }
+    else {
+        root = b;
+    }
+    
+    if(T2 != nullptr) {
+        T2->p_parent = p;
+        if(p->p_Lchild == T2) {
+            p->p_Lchild = T2;
+        }
+        else {
+            p->p_Rchild = T2;
+        }
+    }
+    
+}
+
+void tree:: delete_node(int i) {
+    
+    if(root == nullptr) {
+        return;
+    }
+    node* current = root;
+    node *parent = nullptr;
+    
+    while(current != nullptr) {
+        if(current->value > i) {
+            parent = current;
+            current = current->p_Lchild;
+        }
+        else if (current->value < i) {
+            parent = current;
+            current = current->p_Rchild;
+        }
+        else {
+            break;
+        }
+    }
+    // handle no node
+    node *predessor = current->p_Lchild;
+    
+    
+    if(predessor != nullptr) {
+        while(predessor->p_Rchild != nullptr){
+            predessor = predessor->p_Rchild;
+        }
+        current->value = predessor->value;
+    }
+    
+    node *curr = predessor!= nullptr ? predessor: current;
+    
+    if(curr != nullptr && (curr->p_Lchild == nullptr && curr->p_Rchild == nullptr)) {
+        if(curr->color == true) {
+            if(curr->p_parent->p_Lchild == curr) {
+                curr->p_parent->p_Lchild = nullptr;
+            }
+            else {
+                curr->p_parent->p_Rchild = nullptr;
+            }
+        }
+        else {
+            //double blackNode
+            // curr is double BlackNode
+            node *parent = curr->p_parent;
+            if(parent == nullptr) {
+                root = nullptr;
+                return;
+            }
+            bool isCurrLeft = (parent->p_Lchild == curr) ? true : false;
+            node *siblingNode = (isCurrLeft)? parent->p_Rchild : parent->p_Lchild;
+            bool siblingColor = (siblingNode != nullptr)? siblingNode->color : false;
+            
+            bool siblingLchildColor = (siblingNode!= nullptr && siblingNode->p_Lchild != nullptr)? siblingNode->p_Lchild->color: false;
+            bool siblingRchildColor = (siblingNode!= nullptr && siblingNode->p_Rchild)? siblingNode->p_Rchild->color : false;
+            
+            if (parent->color == true && (siblingNode != nullptr && siblingNode->color == false) &&(!siblingLchildColor && !siblingRchildColor)) {
+                delete_2B(curr);
+            }
+           else if( siblingColor == false && (siblingLchildColor== true || siblingRchildColor == true)) {
+                delete_1(curr);
+            }
+            else if (siblingColor == true) {
+                delete_3(curr);
+            }
+            else if (parent->color == false && (siblingNode!= nullptr && siblingColor == false) &&(!siblingLchildColor && ! siblingRchildColor)) {
+                delete_2A(curr);
+            }
+            
+        }
+        
+    }
+    else {
+        
+        if(curr != nullptr && curr->p_Lchild != nullptr) {
+            if(curr->color == false && curr->p_Lchild->color == true) {
+                if(curr->p_parent->p_Lchild == curr) {
+                    curr->p_parent->p_Lchild = curr->p_Lchild;
+                    curr->p_Lchild->color = false;
+                    curr->p_Lchild->p_parent = curr->p_parent;
+                    curr = nullptr;
+                }
+                else {
+                    curr->p_parent->p_Rchild = curr->p_Lchild;
+                    curr->p_Lchild->color = false;
+                    curr->p_Lchild->p_parent = curr->p_parent;
+                    curr = nullptr;
+                }
+            }
+            else if (curr->color == true && curr->p_Lchild->color == false) {
+                if(curr->p_parent->p_Lchild == curr) {
+                    curr->p_parent->p_Lchild = curr->p_Lchild;
+                    curr->p_Lchild = curr->p_parent;
+                    curr = nullptr;
+                }
+                else {
+                    curr->p_parent->p_Rchild = curr->p_Lchild;
+                    curr->p_Lchild = curr->p_parent;
+                    curr = nullptr;
+                }
+            }
+        }
+        else if(curr != nullptr && curr->p_Rchild != nullptr) {
+            if(curr->color == false && curr->p_Rchild->color == true) {
+                if(curr->p_parent->p_Lchild == curr) {
+                    curr->p_parent->p_Lchild = curr->p_Rchild;
+                    curr->p_Rchild->color = false;
+                    curr->p_Rchild->p_parent = curr->p_parent;
+                    curr = nullptr;
+                }
+                else {
+                    curr->p_parent->p_Rchild = curr->p_Rchild;
+                    curr->p_Rchild->color = false;
+                    curr->p_Rchild->p_parent = curr->p_parent;
+                    curr = nullptr;
+                }
+            }
+            else if (curr->color == true && curr->p_Lchild->color == false) {
+                if(curr->p_parent->p_Lchild == curr) {
+                    curr->p_parent->p_Lchild = curr->p_Lchild;
+                    curr->p_Lchild = curr->p_parent;
+                    curr = nullptr;
+                }
+                else {
+                    curr->p_parent->p_Rchild = curr->p_Rchild;
+                    curr->p_Rchild = curr->p_parent;
+                    curr = nullptr;
+                }
+            }
+        }
+        
+    }
+
+}
+
+void tree:: delete_1(node *curr) {
+    // doubleBlackNode is curr
+    node *parent = curr->p_parent;
+    bool isCurrLeft = (parent->p_Lchild == curr) ? true : false;
+    node *siblingNode = (isCurrLeft)? parent->p_Rchild : parent->p_Lchild;
+    bool siblingColor = (siblingNode != nullptr)? siblingNode->color : false;
+    
+    bool siblingLchildColor = (siblingNode!= nullptr && siblingNode->p_Lchild != nullptr)? siblingNode->p_Lchild->color: false;
+    bool siblingRchildColor = (siblingNode!= nullptr && siblingNode->p_Rchild)? siblingNode->p_Rchild->color : false;
+    
+    bool siblingPosLeft = (parent->p_Lchild == siblingNode)? true:false;
+    
+    bool isredLeft;
+    if(siblingNode != nullptr) {
+        if(siblingNode->p_Lchild != nullptr) {
+            isredLeft = true;
+        }
+        else {
+            isredLeft = false;
+        }
+    }
+    
+    if(siblingColor == false && (siblingLchildColor && siblingRchildColor)) {
+        // black sibling with both the children red
+        if(isCurrLeft) {
+            // r rotate
+            node *parent = curr->p_parent;
+            node *siblingNode = (parent != nullptr) ? parent->p_Rchild : nullptr;
+            node *siblingsLeftChild = (siblingNode != nullptr) ? siblingNode->p_Rchild:nullptr;
+            delete_1_L_rotate(curr->p_parent);
+            curr->p_parent->p_Lchild = nullptr;
+            siblingsLeftChild->color =! siblingsLeftChild->color;
+            siblingNode->color = !siblingNode->color;
+        }
+        else {
+            // l rotate
+            node *parent = curr->p_parent;
+            node *siblingNode = (parent != nullptr) ? parent->p_Lchild : nullptr;
+            node *siblingsLeftChild = (siblingNode != nullptr) ? siblingNode->p_Lchild:nullptr;
+            delete_1_R_rotate(curr->p_parent);
+            curr->p_parent->p_Rchild = nullptr;
+            parent->color = !parent->color;
+            siblingsLeftChild->color =! siblingsLeftChild->color;
+            siblingNode->color = !siblingNode->color;
+        }
+    }
+    else if(siblingColor == false && ( ! siblingPosLeft && !isredLeft)) {
+        // RR
+        delete_1_L_rotate(parent);
+        siblingNode->color = !siblingNode->color;
+        parent->color = !parent->color;
+        if(siblingNode->p_Rchild) siblingNode->p_Rchild->color = !siblingNode->p_Rchild->color;
+        if(isCurrLeft) {
+            curr->p_parent->p_Lchild = nullptr;
+        }
+        else {
+            curr->p_parent->p_Rchild = nullptr;
+        }
+        
+        
+    }
+    else if (siblingColor == false && ( !siblingPosLeft && isredLeft)) {
+        // Rl
+        node *siblingLeft = siblingNode->p_Lchild;
+        delete_1_R_rotate(siblingNode);
+        siblingNode->color = !siblingNode->color;
+        siblingLeft->color = !siblingLeft->color;
+        delete_1_L_rotate(parent);
+        siblingNode->color = !siblingNode->color;
+        if(parent->color == true)parent->color = !parent->color;
+        siblingLeft->color = !siblingLeft->color;
+        if(isCurrLeft) {
+                 curr->p_parent->p_Lchild = nullptr;
+             }
+             else {
+                 curr->p_parent->p_Rchild = nullptr;
+             }
+        
+    }
+    else if(siblingColor == false &&(siblingPosLeft && ! isredLeft)) {
+        //LR
+        node *siblingRight = siblingNode->p_Rchild;
+        delete_1_L_rotate(siblingNode);
+        siblingNode->color = !siblingNode->color;
+        siblingRight->color = ! siblingRight->color;
+        delete_1_R_rotate(parent);
+        siblingNode->color = !siblingNode->color;
+       if(parent->color == true) parent->color = !parent->color;
+        siblingRight->color = !siblingRight->color;
+        if(isCurrLeft) {
+            curr->p_parent->p_Lchild = nullptr;
+        }
+        else {
+            curr->p_parent->p_Rchild = nullptr;
+        }
+        
+    }
+    else if (siblingColor == false && (siblingPosLeft && isredLeft)) {
+        // LL
+        delete_1_R_rotate(parent);
+        siblingNode->color = !siblingNode->color;
+        parent->color = ! parent->color;
+        if(siblingNode->p_Lchild) siblingNode->p_Lchild->color = !siblingNode->p_Lchild->color;
+        if(isCurrLeft) {
+            curr->p_parent->p_Lchild = nullptr;
+        }
+        else {
+            curr->p_parent->p_Rchild = nullptr;
+        }
+    }
+    
+}
+
+void tree:: delete_1_L_rotate(node *p) {
+    
+    node *b = p->p_Rchild;
+    // node *T1 = p->p_Lchild;
+     node *T2 = nullptr;
+     if(b != nullptr) T2 = b->p_Lchild;
+     
+     node *x = p->p_parent;
+     
+     b->p_Lchild = p;
+     b->p_parent = p->p_parent;
+     p->p_Rchild = T2;
+     p->p_parent = b;
+     if(x != nullptr) {
+         bool isleft = (x->p_Lchild == p)? true : false;
+         
+         if(isleft) {
+             x->p_Lchild = b;
+             b->p_parent = x;
+         }
+         else {
+             x->p_Rchild = b;
+             b->p_parent = x;
+         }
+     }
+     else {
+         root = b;
+     }
+     
+     if(T2 != nullptr) {
+         T2->p_parent = p;
+         if(p->p_Lchild == T2) {
+             p->p_Lchild = T2;
+         }
+         else {
+             p->p_Rchild = T2;
+         }
+     }
+    
+}
+
+void tree::delete_1_R_rotate(node *p) {
+    node *b = p->p_Lchild;
+      // node *T1 = p->p_Rchild;
+       node *T2 = nullptr;
+       if(b != nullptr) T2 = b->p_Rchild;
+       
+       node *x = p->p_parent;
+       
+       
+       
+       b->p_Rchild = p;
+       b->p_parent = p->p_parent;
+       p->p_Lchild = T2;
+       p->p_parent = b;
+       
+       if(x != nullptr) {
+           bool isRight = (x->p_Rchild == p) ? true : false;
+
+           
+           if(isRight) {
+               x->p_Rchild = b;
+               b->p_parent = x;
+           }
+           else {
+               x->p_Lchild = b;
+               b->p_parent = x;
+           }
+       }
+       else {
+           root = b;
+       }
+       
+       if(T2 != nullptr) {
+           T2->p_parent = p;
+           if(p->p_Lchild == T2) {
+               p->p_Lchild = T2;
+           }
+           else {
+               p->p_Rchild = T2;
+           }
+       }
+
+}
+
+//case 3 ...when sibling is red ...do the rotation part .. leads to various other cases
+void tree:: delete_3(node* curr) {
+    //curr is the double black node
+    
+    node *parentNode = curr->p_parent;
+    bool isSiblingLeft = (curr->p_parent->p_Lchild == curr) ? false: true;
+    node *siblingNode = (isSiblingLeft)? curr->p_parent->p_Lchild : curr->p_parent->p_Rchild;
+    
+    if(isSiblingLeft) {
+        //R_rotate
+        delete_1_R_rotate(parentNode);
+    }
+    else {
+        delete_1_L_rotate(parentNode);
+    }
+    siblingNode->color = !siblingNode->color;
+    parentNode->color = !parentNode->color;
+    
+    parentNode = curr->p_parent;
+    isSiblingLeft = (curr->p_parent->p_Lchild == curr)? false: true;
+    siblingNode = (isSiblingLeft)? curr->p_parent->p_Lchild : curr->p_parent->p_Rchild;
+    
+    
+     bool siblingColor = (siblingNode != nullptr)? siblingNode->color : false;
+     
+     bool siblingLchildColor = (siblingNode!= nullptr && siblingNode->p_Lchild != nullptr)? siblingNode->p_Lchild->color: false;
+     bool siblingRchildColor = (siblingNode!= nullptr && siblingNode->p_Rchild)? siblingNode->p_Rchild->color : false;
+     
+     if (parentNode->color == true && (siblingNode != nullptr && siblingNode->color == false) &&(!siblingLchildColor && !siblingRchildColor)) {
+         delete_2B(curr);
+     }
+    else if( siblingColor == false && (siblingLchildColor== true || siblingRchildColor == true)) {
+         delete_1(curr);
+     }
+     else if (siblingColor == true) {
+         delete_3(curr);
+     }
+     else if (parentNode->color == false && (siblingNode!= nullptr && siblingColor == false) &&(!siblingLchildColor && ! siblingRchildColor)) {
+         delete_2A(curr);
+     }
+
+}
+
+
+// sibling is black .. parent is red
+void tree:: delete_2B(node* curr) {
+    
+    node *parentNode = curr->p_parent;
+    bool isSiblingLeft = (curr->p_parent->p_Lchild == curr) ? false: true;
+    node *siblingNode = (isSiblingLeft)? curr->p_parent->p_Lchild : curr->p_parent->p_Rchild;
+    
+    if(siblingNode) siblingNode->color = !siblingNode->color;
+    parentNode->color = !parentNode->color;
+    
+    if(parentNode->p_Lchild == curr) {
+        parentNode->p_Lchild = nullptr;
+        curr = nullptr;
+    }
+    else {
+        parentNode->p_Rchild = nullptr;
+        curr = nullptr;
+    }
+    
+}
+
+void tree::delete_2A(node *curr) {
+    
+    bool reachedParent = false;
+    node *parentnode = curr->p_parent;
+    bool isSiblingLeft = (curr->p_parent->p_Lchild == curr) ? false: true;
+    node *siblingNode = (isSiblingLeft)? curr->p_parent->p_Lchild : curr->p_parent->p_Rchild;
+    bool siblingLchildColor = (siblingNode!= nullptr && siblingNode->p_Lchild != nullptr)? siblingNode->p_Lchild->color: false;
+    bool siblingRchildColor = (siblingNode!= nullptr && siblingNode->p_Rchild)? siblingNode->p_Rchild->color : false;
+    
+    if(isSiblingLeft) {
+        curr->p_parent->p_Rchild = nullptr;
+    }
+    else {
+        curr->p_parent->p_Lchild = nullptr;
+    }
+    //double blacknode parent is black ... sibling is black and both her children are black (recursive)
+    while (parentnode->color == false && (siblingNode != nullptr && siblingNode->color == false)&& (!siblingRchildColor && !siblingLchildColor)) {
+        siblingNode->color = true;
+        
+        curr = parentnode;
+        parentnode = curr->p_parent;
+        if(parentnode!= nullptr) {
+            // reached root
+        isSiblingLeft = (( curr->p_parent!= nullptr) && curr->p_parent->p_Lchild == curr) ? false: true;
+        siblingNode = (isSiblingLeft)? curr->p_parent->p_Lchild : curr->p_parent->p_Rchild;
+        siblingLchildColor = (siblingNode!= nullptr && siblingNode->p_Lchild != nullptr)? siblingNode->p_Lchild->color: false;
+        siblingRchildColor = (siblingNode!= nullptr && siblingNode->p_Rchild)? siblingNode->p_Rchild->color : false;
+        }
+        if(curr == root) {
+            reachedParent = true;
+            break;
+        }
+        
+    }
+
+
+}
+
+
+void tree::InorderPrint(node *curr) {
+    if(curr == nullptr) {
+        return;
+    }
+    InorderPrint(curr->p_Lchild);
+    if(curr->color == true) {
+        std::cout << "{" << curr->value << " - " << "🔴 }"  ;
+    }
+    else {
+    std::cout << "{" << curr->value << " - " <<"⚫ }" ;
+    }
+    InorderPrint(curr->p_Rchild);
+}
+
+void PostorderPrint(node *curr) {
+    if(curr == nullptr) {
+        return;
+    }
+    PostorderPrint(curr->p_Lchild);
+    PostorderPrint(curr->p_Rchild);
+    if(curr->color == true) {
+        std::cout << "{" << curr->value << " - " << "🔴 }"  ;
+    }
+    else {
+    std::cout << "{" << curr->value << " - " <<"⚫ }" ;
+    }
+}
+
+void PreorderPrint(node *curr) {
+    if(curr == nullptr) {
+        return;
+    }
+    if(curr->color == true) {
+        std::cout << "{" << curr->value << " - " << "🔴 }"  ;
+    }
+    else {
+    std::cout << "{" << curr->value << " - " <<"⚫ }" ;
+    }
+    PreorderPrint(curr->p_Lchild);
+    PreorderPrint(curr->p_Rchild);
+}
+
+
+int main() {
+    
+    system("COLOR FC");
+    
+    tree t2;
+    
+    t2.insert_node(100);
+    t2.insert_node(50);
+    t2.insert_node(150);
+    t2.insert_node(20);
+    t2.insert_node(10);
+    t2.insert_node(5);
+    t2.insert_node(15);
+    t2.insert_node(30);
+    t2.insert_node(120);
+    t2.insert_node(180);
+    t2.insert_node(110);
+    t2.insert_node(103);
+    t2.insert_node(105);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    
+    t2.delete_node(110);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(120);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(103);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(180);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    t2.delete_node(100);
+    t2.InorderPrint(t2.root);
+    
+    std::cout << std::endl;
+    t2.delete_node(30);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(5);
+    t2.InorderPrint(t2.root);
+    
+    
+    std::cout << std::endl;
+    
+    t2.delete_node(105);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(10);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    
+    t2.delete_node(50);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(15);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(150);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    t2.delete_node(20);
+    t2.InorderPrint(t2.root);
+    std::cout << std::endl;
+    
+    
+    //    t2.insert_node(45);
+    //       t2.insert_node(50);
+    //       t2.insert_node(40);
+    //
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //       t2.insert_node(30);
+    //
+    //       t2.insert_node(80);
+    //       t2.insert_node(100);
+    //       t2.InorderPrint(t2.root);
+    //
+    //
+    //    t2.insert_node(200);
+    //    t2.insert_node(100);
+    //    t2.insert_node(300);
+    //    t2.insert_node(105);
+    //    t2.insert_node(70);
+    //    t2.insert_node(80);
+    //    t2.insert_node(80);
+    //    t2.insert_node(90);
+    //    t2.insert_node(90);
+    //    t2.insert_node(45);
+    //    t2.insert_node(67);
+    //    t2.insert_node(112);
+    //    t2.insert_node(198);
+    //    t2.insert_node(301);
+    //    t2.insert_node(1);
+    //    t2.insert_node(2);
+    //    t2.insert_node(3);
+    //    t2.insert_node(4);
+    //    t2.insert_node(10);
+    //    t2.insert_node(10);
+    //    t2.insert_node(1);
+    //    t2.insert_node(2);
+    //
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //
+    //    t2.delete_node(300);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(80);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(90);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(112);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(301);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(10);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(10);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(1);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(2);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(1);
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    //    t2.delete_node(2);
+    //
+    //    t2.InorderPrint(t2.root);
+    //    std::cout << std::endl;
+    
+    //
+//    t2.insert_node(7);
+//    t2.insert_node(3);
+//    t2.insert_node(18);
+//    t2.insert_node(10);
+//    t2.insert_node(22);
+//    t2.insert_node(8);
+//    t2.insert_node(11);
+//    t2.insert_node(26);
+//    t2.insert_node(2);
+//    t2.insert_node(6);
+//    t2.insert_node(13);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+//
+//    t2.delete_node(18);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+//    t2.delete_node(11);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+//    t2.delete_node(3);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+//    t2.delete_node(10);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+//    t2.delete_node(22);
+//    t2.InorderPrint(t2.root);
+//    std::cout << std::endl;
+    
+    
+    
+    cin.get();
+    
+    return 0;
+}

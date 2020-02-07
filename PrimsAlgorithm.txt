@@ -1,0 +1,363 @@
+//vijay thyagarajan HW_3
+//SU ID: 970196868
+//main.cpp
+//PrimsAlgorithm (Minimum Spanning tree Algorithm)
+//Created by Vijay on 24/09/19.
+//Copyright © 2019 Vijay. All rights reserved.
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iterator>
+#include <algorithm>
+
+using namespace std;
+
+// graph node G(V,W) V -> vertex and W -> weight
+class n_node {
+public:
+    int id;
+    int weight;
+
+    n_node(int v, int w) {
+        id = v;
+        weight = w;
+    }
+};
+
+// Graph class
+class Graph {
+public:
+    int V;
+    vector<vector<n_node>*>g;
+    // constructor for Graph class
+    Graph(int NumberOfVertices) {
+        this->V = NumberOfVertices;
+        g = vector<vector<n_node>*>(V);
+        for (int i = 0; i < g.size(); i++) {
+            g.at(i) = nullptr;
+        }
+    }
+    // adding  edges to the graph from the source vector
+    // its bidirectional  u->w & w->u
+    void addEdges(Graph* G, vector<vector<int>> source) {
+        
+        auto sourceIter = source.begin();
+        
+        while (sourceIter != source.end()) {
+            vector<int> currentWeight = *sourceIter;
+            if(currentWeight.size()) {
+                if (G->g[currentWeight[0]] == nullptr) {
+                    G->g[currentWeight[0]] = new vector<n_node>;
+                }
+                 if (G->g[currentWeight[1]] == nullptr) {
+                    G->g[currentWeight[1]] = new vector<n_node>;
+                }
+            
+            G->g[currentWeight[0]]->push_back(n_node(currentWeight[1], currentWeight[2]));
+            G->g[currentWeight[1]]->push_back(n_node(currentWeight[0],currentWeight[2]));
+            }
+            sourceIter++;
+        }
+        
+    }
+    
+    int edgeWeight(int v, int w) {
+        vector<n_node> *vec = *(g.begin()+v);
+        
+        for(auto i = vec->begin();i != vec->end();i++) {
+            if( i->id == w) {
+                return i->weight;
+            }
+        }
+        return INT_MAX;
+    }
+
+};
+
+
+class h_node {
+public:
+    int id;
+    int cost;
+
+    h_node() {
+
+    }
+    h_node(int v, int w) {
+        id = v;
+        cost = w;
+    }
+};
+
+// Routing table node
+class rt_node {
+
+public:
+    bool is_visited;
+    int cost;
+    int from;
+    int h_pos;
+
+    rt_node() {
+
+    }
+    rt_node(bool isVisited, int weight, int previous, int heapPos) {
+        is_visited = isVisited;
+        cost = weight;
+        from = previous;
+        h_pos = heapPos;
+    }
+};
+
+// MinHeap class
+class minHeap {
+public:
+    int heapSize;
+    vector<rt_node> routingTable;
+    vector<h_node> heap;
+    vector<int> positionArray;
+    int sourceVetex;
+    
+    // min heap constructor
+    minHeap(int size) {
+        heapSize = size;
+        routingTable = vector<rt_node>(size);
+        heap = vector<h_node>(size);
+        positionArray = vector<int>(size);
+    }
+     //create a new minHeap node
+    h_node createHeapNode(minHeap *MinHeap, int v, int w) {
+        return  h_node(v, w);
+    }
+    // swap two nodes
+    void swaapNodesInHeapStruture(h_node & first, h_node  & second) {
+        h_node dummy = first;
+        first = second;
+        second = dummy;
+    }
+    // heapification for MinHeap
+    void heapify(minHeap *MinHeap, int index) {
+        int small = index;
+        int leftNodeIndex = 2 * index + 1;
+        int rightNodeIndex = 2 * index + 2;
+
+        if (leftNodeIndex < MinHeap->heapSize && heap[leftNodeIndex].cost < heap[small].cost) {
+            small = leftNodeIndex;
+        }
+        if (rightNodeIndex < MinHeap->heapSize && heap[rightNodeIndex].cost < heap[small].cost) {
+            small = rightNodeIndex;
+        }
+        if (index != small) {
+            h_node smallest = MinHeap->heap[small];
+            h_node currentNode = MinHeap->heap[index];
+
+            MinHeap->positionArray[smallest.id] = index;
+            MinHeap->positionArray[currentNode.id] = small;
+
+            swaapNodesInHeapStruture(MinHeap->heap[small], MinHeap->heap[index]);
+
+            heapify(MinHeap, small);
+        }
+    }
+
+    // extracting the root of the min heap.
+    h_node top(minHeap *MinHeap) {
+        if (MinHeap->heapSize == 0) {
+            return {};
+        }
+
+        h_node rootNode = MinHeap->heap[0];
+
+        h_node lastNode = MinHeap->heap[heapSize - 1];
+        MinHeap->heap[0] = lastNode;
+        MinHeap->heap[heapSize - 1] = rootNode;
+        MinHeap->heap.resize(heapSize - 1);
+
+        MinHeap->positionArray[rootNode.id] = heapSize - 1;
+        MinHeap->positionArray[lastNode.id] = 0;
+
+        --MinHeap->heapSize;
+        MinHeap->heapify(MinHeap, 0);
+
+        return rootNode;
+    }
+    
+    // updating the distance of a vetex from the source if the better  (smaller) distance route is available
+    void updateDistance(minHeap *MinHeap, int vertexName, int newDistance) {
+
+        int index = MinHeap->positionArray[vertexName];
+
+        int parentIndex = (index - 1) / 2;
+        MinHeap->heap[index].cost = newDistance;
+        MinHeap->routingTable[vertexName].cost = newDistance;
+        while (index && MinHeap->heap[index].cost < MinHeap->heap[parentIndex].cost) {
+
+            MinHeap->positionArray[MinHeap->heap[index].id] = parentIndex;
+            MinHeap->positionArray[MinHeap->heap[parentIndex].id] = index;
+
+            swaapNodesInHeapStruture(MinHeap->heap[index], MinHeap->heap[parentIndex]);
+
+            index = parentIndex;
+            parentIndex = (index - 1) / 2;
+        }
+    }
+    // to check if the h_node is in the minHeap
+    bool isInHeap(minHeap *MinHeap, int vertex) {
+        if (!routingTable[vertex].is_visited) {
+            return true;
+        }
+        return false;
+    }
+    
+    void MSTOutput(vector<rt_node>& routingTable,int startVertex) {
+        int edgeCount = (int)routingTable.size();
+        int treeCost = 0;
+        for(int i = 0 ; i < edgeCount ;i++) {
+            if( i != startVertex) {
+                std::cout << i  << " " << routingTable[i].from << " "<< routingTable[i].cost << " " << std::endl;
+                treeCost+= routingTable[i].cost;
+            }
+        }
+        
+        std::cout << "The overall cost of the minimum spanning tree is "<< treeCost << std::endl;
+    }
+
+    // utility method to display the routing table
+    void PrintRoutingTable() {
+
+        int size = (int)routingTable.size();
+
+        std::cout << "vertex Name : ";
+        for (int j = 0; j < size; j++) {
+            std::cout << j << "   ";
+        }
+        std::cout << std::endl;
+        std::cout << "cost        : ";
+        for (int j = 0; j < size; j++) {
+            std::cout << routingTable[j].cost << "   ";
+        }
+        std::cout << std::endl;
+        std::cout << "is_Visited  : ";
+        for (int j = 0; j < size; j++) {
+            std::cout << routingTable[j].is_visited << "   ";
+        }
+        std::cout << std::endl;
+        std::cout << "from        : ";
+        for (int j = 0; j < size; j++) {
+            std::cout << routingTable[j].from << "   ";
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+
+    }
+    // Final output print method
+    void Print(vector<rt_node> routingTable, int sourceVertex) {
+        int rt_vector_size = (int)routingTable.size();
+
+        for (int i = 0; i < rt_vector_size; i++) {
+            std::cout << "The cost from node " << sourceVertex << " to node " << i <<" is "<< routingTable[i].cost << "; from node" << routingTable[i].from << std::endl;
+        }
+    }
+};
+
+
+void MST(Graph *G , int Vertex = 0) {
+    
+    int V = G->V;
+    int startVertex = Vertex ;
+    vector<int> cost(V,INT_MAX);
+    minHeap *MinHeap = new minHeap(V);
+    
+    for(int i = 0;i< V;i++) {
+        MinHeap->routingTable[i] = rt_node(false,cost[i],-1,-1);
+        MinHeap->heap[i] = h_node(i,cost[i]);
+        MinHeap->positionArray[i] = i;
+    }
+    
+    cost[startVertex] = 0;
+    MinHeap->heap[startVertex].cost = 0;
+    MinHeap->routingTable[startVertex].cost = 0;
+    MinHeap->updateDistance(MinHeap,startVertex,0);
+    MinHeap->routingTable[startVertex].is_visited = true;
+    
+    for( int numberOfVertex = 0 ; numberOfVertex < V;numberOfVertex++) {
+        h_node temp = MinHeap->top(MinHeap);
+
+        int currentVertex = temp.id;
+       // std::cout << currentVertex << std::endl;
+        vector<n_node> *neighbours = G->g[currentVertex];
+
+        vector<n_node>::iterator iterN;
+        if (neighbours != nullptr) {
+            iterN = neighbours->begin();
+        }
+        else {
+            break;
+        }
+        
+         while (iterN != neighbours->end()) {
+             
+            if (MinHeap->isInHeap(MinHeap, iterN->id) && temp.cost != INT_MAX && (G->edgeWeight(currentVertex,iterN->id) < cost[iterN->id])) {
+                 cost[iterN->id] = G->edgeWeight(currentVertex,iterN->id);
+                 MinHeap->routingTable[iterN->id].cost = cost[iterN->id];
+                 MinHeap->routingTable[iterN->id].from = currentVertex;
+
+                 MinHeap->updateDistance(MinHeap, iterN->id, cost[iterN->id]);
+                }
+             
+             iterN++;
+         }
+        MinHeap->routingTable[currentVertex].is_visited = true;
+    }
+    MinHeap->routingTable[startVertex].from = startVertex;
+    //MinHeap->PrintRoutingTable();
+    MinHeap->MSTOutput(MinHeap->routingTable,startVertex);
+    
+}
+
+int main() {
+    
+    int V = 0;
+    int source = 0;
+    string STRING;
+    ifstream infile;
+    int lineCount = 0;
+    vector<vector<int>> src;
+    // path of the graph.txt file
+    infile.open("data.txt");
+
+    while (!infile.eof()) {
+        getline(infile, STRING);
+        std::istringstream iss(STRING);
+        istream_iterator<std::string> begin(iss);
+        std::istream_iterator<std::string> end;
+        std::vector<std::string> vstrings(begin, end);
+
+        if (lineCount == 0 && vstrings.size() ==1) {
+            source = stoi(STRING);
+        }
+        else if (lineCount == 1) {
+            V = stoi(STRING);
+        }
+        else if (lineCount > 2) {
+            vector<int> edgeList;
+            std::transform(vstrings.begin(),vstrings.end(), std::back_inserter(edgeList),
+                [](const std::string& str) { return std::stoi(str); });
+            src.push_back(edgeList);
+        }
+        lineCount++;
+    }
+    infile.close();
+    
+    Graph g(V);
+    g.addEdges(&g, src);
+    
+    MST(&g,source);
+    
+    cin.get();
+    return 0;
+    
+}
